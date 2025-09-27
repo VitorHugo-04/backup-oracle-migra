@@ -1,0 +1,69 @@
+# Parametros do Oracle
+	export VERSION=2.13
+	export TIPO=$2
+	export INSTANCE=$1
+        export ORACLE_SID=$1
+        export ORACLE_OWNER=oracle
+        export ORACLE_TERM=xterm
+        export THREADS_FLAG=native
+        export ORACLE_BASE=/u01/app/oracle
+        export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1
+        export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH
+        export EDITOR=vi
+        export PATH=$PATH:$HOME/bin:$ORACLE_HOME/bin
+        ERROR_COUNT=0
+        export ORACLE_HOME_LISTNER=$ORACLE_HOME
+        export TNS_ADMIN=$ORACLE_HOME/network/admin
+
+#Parametros do ambiente de backup
+	export TIPO=`echo $2 | tr "a-z" "A-Z"`
+	export RETENCAO_LOG=30
+	export RETENCAO_DMP=5
+	export DIRECTORY_ORACLE=MIGRA
+        export DIR_DMP=/backup/${INSTANCE}
+        export DIR_TMP=$ORACLE_BASE/MigraTI/MigraBKP/tmp
+        export DIR_LOG=$ORACLE_BASE/MigraTI/MigraBKP/log
+        export ARQ_LOG_PROCESSO=${DIR_TMP}/Export_processo.log
+        export ARQ_LOG_GERAL=/var/log/backup/${TIPO}_${INSTANCE}.Geral.log
+        export ARQ_OWNER=/usr/tmp/Lista_owner_${INSTANCE}.tab
+        export SCN_ATUAL=/usr/tmp/scn_${INSTANCE}.txt
+        export USER_EXPORT=migrabkp
+        export USER_EXPORT_PASSWORD=bkpmigra
+		export ENGLISH=S
+		export FILESIZE=10000M
+		
+# Novas variáveis adicionadas na versão 2.13
+		export COMPRESSION_LEVEL=MEDIUM
+		export PARALLEL_DEGREE=4
+		export ENCRYPTION_MODE=TRANSPARENT
+
+#Variaveis de archives	
+	export RETENTION_ORI=3
+	export RETENTION_DEST=5
+	export EXTENTION=*.arc
+	export COMPACT_ORIGEM=S
+
+#parametros de email
+	export EMAIL=N
+        export EMAIL_AVISO=""
+        export STATUS=OK
+        export STATUS_GERAL=OK
+        
+#Copiar remotamente?
+        export REMOTE_MODE=S
+        export REMOTE_STRING=/mnt/remoto
+        export PATH_REMOTO=
+
+	export REMOTE_EXTRA=S
+	export REMOTE_STRING2=/mnt/remoto2
+	export PATH_REMOTO2=
+	export RETENCAO_DMP_REMOTO=7
+	export RETENCAO_DMP_REMOTO2=3
+	
+#Monitorado?
+        export TITAN=S
+        export PATH_TITAN=/usr/bin/
+        export SENDER=zabbix_sender
+        export T_CONF=/etc/zabbix/zabbix_agentd.conf
+        export T_IP=
+        export T_Host=
