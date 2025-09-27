@@ -5,8 +5,8 @@
 
 set -e
 
-REPO_URL="https://github.com/seu-usuario/backup-oracle-migra.git"
-INSTALL_DIR="/u01/app/oracle/MigraTI/MigraBKP"
+REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra.git"
+INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
 
 log() {

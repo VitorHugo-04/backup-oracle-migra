@@ -1,0 +1,72 @@
+# Arquivo de exemplo para usuários e desenvolvedores, serve apenas de consulta.
+# Utilize S ou N para as perguntas das variaveis.
+# Parametros do Oracle
+        export VERSION=2.13 #Versão da rotina
+        export TIPO=$2 #Tipo de backup (OWNER ou FULL), full ou por schema.
+        export INSTANCE=$1 #Nome da instancia Oracle
+        export ORACLE_SID=$1 #Nome da instancia Oracle
+        export ORACLE_OWNER=oracle 
+        export ORACLE_TERM=xterm
+        export THREADS_FLAG=native
+        export ORACLE_BASE=/u01/app/oracle 
+        export ORACLE_HOME=$ORACLE_BASE/product/19.0.0/dbhome_1
+        export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH
+        export EDITOR=vi
+        export PATH=$PATH:$HOME/bin:$ORACLE_HOME/bin
+        ERROR_COUNT=0
+        export ORACLE_HOME_LISTNER=$ORACLE_HOME
+        export TNS_ADMIN=$ORACLE_HOME/network/admin
+
+#Parametros do ambiente de backup
+        export TIPO=`echo $2 | tr "a-z" "A-Z"`
+        export RETENCAO_LOG=30 #Retenção dos arquivos de log.
+        export RETENCAO_DMP=5 #Retenção dos backups
+        export DIRECTORY_ORACLE=MIGRA #Directory do Oracle utilizado
+        export DIR_DMP=/backup/${INSTANCE} #Disco de backup utilizado
+        export DIR_TMP=$ORACLE_BASE/MigraTI/MigraBKP/tmp 
+        export DIR_LOG=$ORACLE_BASE/MigraTI/MigraBKP/log
+        export ARQ_LOG_PROCESSO=${DIR_TMP}/Export_processo.log
+        export ARQ_LOG_GERAL=/var/log/backup/${TIPO}_${INSTANCE}.Geral.log
+        export ARQ_OWNER=/usr/tmp/Lista_owner_${INSTANCE}.tab
+        export SCN_ATUAL=/usr/tmp/scn_${INSTANCE}.txt
+        export USER_EXPORT=migrabkp #Usuário do Oracle que vai realizar o expdp
+        export USER_EXPORT_PASSWORD=bkpmigra #Senha do usuário do Oracle
+                export ENGLISH=S #Oracle esta em ingles?
+                export FILESIZE=10000M #Tamanho dos arquivos de backup
+
+# Novas variáveis adicionadas na versão 2.13
+                export COMPRESSION_LEVEL=MEDIUM
+                export PARALLEL_DEGREE=4
+                export ENCRYPTION_MODE=TRANSPARENT
+
+#Variaveis de archives
+        export RETENTION_ORI=3 #Retenção dos archives na origem
+        export RETENTION_DEST=5 #Retenção dos archives copiados para pasta de backup
+        export EXTENTION=*.arc #Extensão utilizada para os archives
+        export COMPACT_ORIGEM=S #Compactar os archives na origem?
+
+#parametros de email
+        export EMAIL=N
+        export EMAIL_AVISO=""
+        export STATUS=OK
+        export STATUS_GERAL=OK
+
+#Copiar remotamente?
+        export REMOTE_MODE=S #Copiar o backup para server remoto?
+        export REMOTE_STRING=/mnt/remoto #Disco remoto criado no server local
+        export PATH_REMOTO= #Pasta dentro do disco remoto, caso exista
+
+        export REMOTE_EXTRA=S #Possui mais de um server remoto?
+        export REMOTE_STRING2=/mnt/remoto2
+        export PATH_REMOTO2=
+        export RETENCAO_DMP_REMOTO=7 #retenção dos backups copiados a server remoto
+        export RETENCAO_DMP_REMOTO2=3
+
+#Monitorado?
+        export TITAN=S #Server é monitorado pelo nosso Zabbix?
+        export PATH_TITAN=/usr/bin/ 
+        export SENDER=zabbix_sender
+        export T_CONF=/etc/zabbix/zabbix_agentd.conf #Arquivo de configuração do Zabbix
+        export T_IP= #Ip do Zabbix
+        export T_Host= #Nome do host deste server, configurado no Zabbix
+

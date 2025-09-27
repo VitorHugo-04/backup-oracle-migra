@@ -1,21 +1,15 @@
 # Configurações específicas dos clientes
 migra.conf
 *.backup
+*.dmp
+*.dmp.gz
 
-# Logs e arquivos temporários
+# Logs e temporários
 *.log
 *.pid
 tmp/
 log/
 
-# Arquivos de backup
-*.old
-*.bak
-
-# Arquivos do sistema
+# Arquivos de sistema
 .DS_Store
-Thumbs.db
 
-# Arquivos temporários do merge
-migra.conf.new
-*.tmp
