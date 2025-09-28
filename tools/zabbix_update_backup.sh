@@ -7,7 +7,6 @@ set -e
 
 # Configurações
 REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra/archive/refs/heads/main.tar.gz"
-CONFIG_FILE="/etc/migra.conf"
 LOG_FILE="/var/log/backup_update.log"
 
 # Detectar ORACLE_BASE automaticamente
@@ -18,9 +17,9 @@ detect_oracle_base() {
         return
     fi
     
-    # Método 2: Ler do migra.conf atual
-    if [ -f "$CONFIG_FILE" ]; then
-        local oracle_base=$(grep "export ORACLE_BASE=" "$CONFIG_FILE" | cut -d'=' -f2)
+    # Método 2: Ler do migra.conf atual (via link simbólico)
+    if [ -f "/etc/migra.conf" ]; then
+        local oracle_base=$(grep "export ORACLE_BASE=" "/etc/migra.conf" | cut -d'=' -f2)
         if [ -n "$oracle_base" ]; then
             echo "$oracle_base"
             return
@@ -48,6 +47,7 @@ detect_oracle_base() {
 
 ORACLE_BASE=$(detect_oracle_base)
 INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
+CONFIG_FILE="$INSTALL_DIR/bin/migra.conf"
 TEMP_DIR="/tmp/migra_update_$$"
 
 log() {
@@ -97,7 +97,7 @@ main() {
     cp -r "$extracted_dir/tools/"* "$INSTALL_DIR/tools/"
     
     # Mesclar configurações se existir backup
-    if [ -f "${CONFIG_FILE}.backup.$(date +%Y%m%d)"* ]; then
+    if ls ${CONFIG_FILE}.backup.* >/dev/null 2>&1; then
         log "Mesclando configurações..."
         latest_backup=$(ls -t ${CONFIG_FILE}.backup.* | head -1)
         bash "$INSTALL_DIR/tools/merge_config.sh" \
@@ -111,6 +111,10 @@ main() {
         # Atualizar ORACLE_BASE no arquivo
         sed -i "s|export ORACLE_BASE=.*|export ORACLE_BASE=$ORACLE_BASE|" "$CONFIG_FILE"
     fi
+    
+    # Criar/recriar link simbólico /etc/migra.conf -> arquivo real
+    log "Criando link simbólico..."
+    ln -sf "$CONFIG_FILE" "/etc/migra.conf"
     
     # Definir permissões
     chmod +x "$INSTALL_DIR/bin/"*.sh
