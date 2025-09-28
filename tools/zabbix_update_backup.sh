@@ -6,7 +6,7 @@
 set -e
 
 REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra/archive/refs/heads/main.tar.gz"
-INSTALL_DIR="/u01/app/oracle/MigraTI/MigraBKP"
+INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
 LOG_FILE="/var/log/backup_update.log"
 TEMP_DIR="/tmp/migra_update_$$"

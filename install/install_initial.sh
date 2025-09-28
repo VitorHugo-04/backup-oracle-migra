@@ -5,7 +5,7 @@
 
 set -e
 
-INSTALL_DIR="/u01/app/oracle/MigraTI/MigraBKP"
+INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
