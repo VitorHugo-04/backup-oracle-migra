@@ -32,11 +32,6 @@
 		export ENGLISH=S
 		export FILESIZE=10000M
 		
-# Novas variáveis adicionadas na versão 2.13
-		export COMPRESSION_LEVEL=MEDIUM
-		export PARALLEL_DEGREE=4
-		export ENCRYPTION_MODE=TRANSPARENT
-
 #Variaveis de archives	
 	export RETENTION_ORI=3
 	export RETENTION_DEST=5
@@ -54,14 +49,14 @@
         export REMOTE_STRING=/mnt/remoto
         export PATH_REMOTO=
 
-	export REMOTE_EXTRA=S
+	export REMOTE_EXTRA=N
 	export REMOTE_STRING2=/mnt/remoto2
 	export PATH_REMOTO2=
 	export RETENCAO_DMP_REMOTO=7
 	export RETENCAO_DMP_REMOTO2=3
 	
 #Monitorado?
-        export TITAN=S
+        export TITAN=N
         export PATH_TITAN=/usr/bin/
         export SENDER=zabbix_sender
         export T_CONF=/etc/zabbix/zabbix_agentd.conf
