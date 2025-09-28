@@ -1,14 +1,53 @@
 #!/bin/bash
 
-# Script de Atualização SEM Git - para execução via Zabbix
-# Baixa tar.gz em vez de usar git
+# Script de Atualização para execução via Zabbix
+# Versão: 1.1 - Detecta ORACLE_BASE automaticamente
 
 set -e
 
+# Configurações
 REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra/archive/refs/heads/main.tar.gz"
-INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
 LOG_FILE="/var/log/backup_update.log"
+
+# Detectar ORACLE_BASE automaticamente
+detect_oracle_base() {
+    # Método 1: Variável de ambiente
+    if [ -n "$ORACLE_BASE" ]; then
+        echo "$ORACLE_BASE"
+        return
+    fi
+    
+    # Método 2: Ler do migra.conf atual
+    if [ -f "$CONFIG_FILE" ]; then
+        local oracle_base=$(grep "export ORACLE_BASE=" "$CONFIG_FILE" | cut -d'=' -f2)
+        if [ -n "$oracle_base" ]; then
+            echo "$oracle_base"
+            return
+        fi
+    fi
+    
+    # Método 3: Procurar diretórios comuns
+    for path in /u01/app/oracle /opt/oracle /oracle; do
+        if [ -d "$path" ]; then
+            echo "$path"
+            return
+        fi
+    done
+    
+    # Método 4: Procurar pela estrutura MigraTI existente
+    local migra_path=$(find /u01 /opt /oracle -name "MigraTI" -type d 2>/dev/null | head -1)
+    if [ -n "$migra_path" ]; then
+        echo "$(dirname "$migra_path")"
+        return
+    fi
+    
+    # Padrão se não encontrar
+    echo "/u01/app/oracle"
+}
+
+ORACLE_BASE=$(detect_oracle_base)
+INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
 TEMP_DIR="/tmp/migra_update_$$"
 
 log() {
@@ -23,6 +62,8 @@ error_exit() {
 
 main() {
     log "=== Iniciando atualização do sistema de backup ==="
+    log "ORACLE_BASE detectado: $ORACLE_BASE"
+    log "Diretório de instalação: $INSTALL_DIR"
     
     # Backup da configuração atual
     if [ -f "$CONFIG_FILE" ]; then
@@ -46,6 +87,7 @@ main() {
     # Backup da instalação atual
     if [ -d "$INSTALL_DIR" ]; then
         mv "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
+        log "Backup da instalação atual criado"
     fi
     
     # Copiar nova versão
@@ -62,6 +104,12 @@ main() {
             "$extracted_dir/config/migra.conf.template" \
             "$latest_backup" \
             "$CONFIG_FILE" || error_exit "Falha ao mesclar configurações"
+    else
+        # Primeira instalação - usar template
+        log "Primeira instalação - criando configuração inicial..."
+        cp "$extracted_dir/config/migra.conf.template" "$CONFIG_FILE"
+        # Atualizar ORACLE_BASE no arquivo
+        sed -i "s|export ORACLE_BASE=.*|export ORACLE_BASE=$ORACLE_BASE|" "$CONFIG_FILE"
     fi
     
     # Definir permissões
