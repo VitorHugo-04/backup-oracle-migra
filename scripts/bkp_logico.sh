@@ -4,6 +4,7 @@ set -x
 source /etc/migra.conf
 STATUS=0
 ERROR_COUNT=0
+#teste de update
 
 #Testando se a rotina esta rodando
 if [ "${TITAN}" == "S" ]; then

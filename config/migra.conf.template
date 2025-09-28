@@ -1,5 +1,5 @@
 # Parametros do Oracle
-	export VERSION=2.13
+	export VERSION=2.14
 	export TIPO=$2
 	export INSTANCE=$1
         export ORACLE_SID=$1
