@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Script de Instalação Inicial do Sistema de Backup
-# Para novos clientes ou primeira instalação
+# Instalação Inicial SEM Git - Copia arquivos locais
+# Para usar após extrair o tar.gz
 
 set -e
 
-REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra.git"
-INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
+INSTALL_DIR="/u01/app/oracle/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
@@ -18,13 +18,7 @@ error_exit() {
     exit 1
 }
 
-# Verifica se já existe instalação
-if [ -d "$INSTALL_DIR/.git" ]; then
-    log "Instalação Git já existe. Use o script de atualização."
-    exit 0
-fi
-
-log "=== Instalação Inicial do Sistema de Backup ==="
+log "=== Instalação Inicial do Sistema de Backup (Sem Git) ==="
 
 # Backup da instalação atual se existir
 if [ -d "$INSTALL_DIR" ]; then
@@ -38,36 +32,50 @@ if [ -f "$CONFIG_FILE" ]; then
     cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 fi
 
-# Clona repositório
-log "Clonando repositório..."
-git clone "$REPO_URL" "$INSTALL_DIR" || error_exit "Falha ao clonar repositório"
-
-# Cria estrutura de diretórios
+# Criar estrutura de diretórios
 log "Criando estrutura de diretórios..."
-mkdir -p "$INSTALL_DIR"/{tmp,log}
-chmod 755 "$INSTALL_DIR"/{tmp,log}
+mkdir -p "$INSTALL_DIR"/{bin,tmp,log}
 
-# Se existe configuração anterior, mescla com template
+# Copiar arquivos do pacote extraído
+log "Copiando scripts..."
+cp -r "$CURRENT_DIR"/../scripts/* "$INSTALL_DIR/bin/" || error_exit "Falha ao copiar scripts"
+
+log "Copiando ferramentas..."
+mkdir -p "$INSTALL_DIR/tools"
+cp -r "$CURRENT_DIR"/../tools/* "$INSTALL_DIR/tools/" || error_exit "Falha ao copiar tools"
+
+# Configuração
 if [ -f "${CONFIG_FILE}.backup."* ]; then
     log "Mesclando configuração anterior..."
     latest_backup=$(ls -t ${CONFIG_FILE}.backup.* | head -1)
     bash "$INSTALL_DIR/tools/merge_config.sh" \
-        "$INSTALL_DIR/config/migra.conf.template" \
+        "$CURRENT_DIR/../config/migra.conf.template" \
         "$latest_backup" \
-        "$CONFIG_FILE"
+        "$CONFIG_FILE" || error_exit "Falha ao mesclar configurações"
 else
     log "Criando configuração inicial..."
-    cp "$INSTALL_DIR/config/migra.conf.template" "$CONFIG_FILE"
+    cp "$CURRENT_DIR/../config/migra.conf.template" "$CONFIG_FILE" || error_exit "Falha ao criar configuração"
     log "ATENÇÃO: Configure as variáveis específicas em $CONFIG_FILE"
 fi
 
-# Define permissões
+# Definir permissões
 chmod +x "$INSTALL_DIR/bin/"*.sh
 chmod +x "$INSTALL_DIR/tools/"*.sh
 chmod 644 "$CONFIG_FILE"
 
+# Configurar Zabbix
+log "Configurando Zabbix Agent..."
+cp "$INSTALL_DIR/tools/zabbix_update_backup.sh" /usr/local/bin/
+chmod +x /usr/local/bin/zabbix_update_backup.sh
+
+# Adicionar UserParameter se não existir
+if ! grep -q "backup.update" /etc/zabbix/zabbix_agentd.conf 2>/dev/null; then
+    echo "UserParameter=backup.update,/usr/local/bin/zabbix_update_backup.sh" >> /etc/zabbix/zabbix_agentd.conf
+    log "UserParameter adicionado ao Zabbix"
+fi
+
 log "=== Instalação concluída ==="
 log "Próximos passos:"
 log "1. Configure as variáveis específicas em: $CONFIG_FILE"
-log "2. Teste o backup: $INSTALL_DIR/bin/bkp_logico.sh <INSTANCE> <TIPO>"
-log "3. Configure o crontab se necessário"
+log "2. Reinicie o Zabbix Agent: systemctl restart zabbix-agent"
+log "3. Teste o backup: $INSTALL_DIR/bin/bkp_logico.sh <INSTANCE> <TIPO>"

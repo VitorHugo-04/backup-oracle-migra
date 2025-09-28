@@ -1,27 +1,26 @@
 #!/bin/bash
 
-# Script de Atualização para execução via Zabbix
-# Versão: 1.0
+# Script de Atualização SEM Git - para execução via Zabbix
+# Baixa tar.gz em vez de usar git
 
 set -e
 
-# Configurações
-REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra.git"
-INSTALL_DIR="$ORACLE_BASE/MigraTI/MigraBKP"
+REPO_URL="https://github.com/VitorHugo-04/backup-oracle-migra/archive/refs/heads/main.tar.gz"
+INSTALL_DIR="/u01/app/oracle/MigraTI/MigraBKP"
 CONFIG_FILE="/etc/migra.conf"
 LOG_FILE="/var/log/backup_update.log"
+TEMP_DIR="/tmp/migra_update_$$"
 
-# Função de log
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
 error_exit() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$LOG_FILE"
+    rm -rf "$TEMP_DIR"
     exit 1
 }
 
-# Função principal
 main() {
     log "=== Iniciando atualização do sistema de backup ==="
     
@@ -31,46 +30,55 @@ main() {
         log "Backup da configuração criado"
     fi
     
-    # Atualiza ou clona repositório
-    if [ -d "$INSTALL_DIR/.git" ]; then
-        log "Atualizando repositório existente..."
-        cd "$INSTALL_DIR"
-        git fetch origin || error_exit "Falha ao fazer fetch"
-        git reset --hard origin/main || error_exit "Falha ao resetar repositório"
-    else
-        log "Clonando repositório..."
-        [ -d "$INSTALL_DIR" ] && mv "$INSTALL_DIR" "${INSTALL_DIR}.old.$(date +%Y%m%d_%H%M%S)"
-        git clone "$REPO_URL" "$INSTALL_DIR" || error_exit "Falha ao clonar repositório"
-        cd "$INSTALL_DIR"
+    # Criar diretório temporário
+    mkdir -p "$TEMP_DIR"
+    cd "$TEMP_DIR"
+    
+    # Baixar nova versão
+    log "Baixando nova versão..."
+    wget -q "$REPO_URL" -O migra.tar.gz || error_exit "Falha ao baixar repositório"
+    tar -xzf migra.tar.gz || error_exit "Falha ao extrair arquivos"
+    
+    # Encontrar diretório extraído
+    extracted_dir=$(find . -name "backup-oracle-migra-*" -type d | head -1)
+    [ -z "$extracted_dir" ] && error_exit "Diretório extraído não encontrado"
+    
+    # Backup da instalação atual
+    if [ -d "$INSTALL_DIR" ]; then
+        mv "$INSTALL_DIR" "${INSTALL_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
     fi
     
-    # Mescla configurações
-    if [ -f "${CONFIG_FILE}.backup.$(date +%Y%m%d)_"* ]; then
+    # Copiar nova versão
+    log "Instalando nova versão..."
+    mkdir -p "$INSTALL_DIR"/{bin,tmp,log,tools}
+    cp -r "$extracted_dir/scripts/"* "$INSTALL_DIR/bin/"
+    cp -r "$extracted_dir/tools/"* "$INSTALL_DIR/tools/"
+    
+    # Mesclar configurações se existir backup
+    if [ -f "${CONFIG_FILE}.backup.$(date +%Y%m%d)"* ]; then
         log "Mesclando configurações..."
         latest_backup=$(ls -t ${CONFIG_FILE}.backup.* | head -1)
         bash "$INSTALL_DIR/tools/merge_config.sh" \
-            "$INSTALL_DIR/config/migra.conf.template" \
+            "$extracted_dir/config/migra.conf.template" \
             "$latest_backup" \
-            "/tmp/migra.conf.new" || error_exit "Falha ao mesclar configurações"
-        
-        cp "/tmp/migra.conf.new" "$CONFIG_FILE" || error_exit "Falha ao instalar nova configuração"
-        rm -f "/tmp/migra.conf.new"
+            "$CONFIG_FILE" || error_exit "Falha ao mesclar configurações"
     fi
     
-    # Atualiza scripts
-    log "Atualizando scripts..."
-    cp "$INSTALL_DIR/scripts/"*.sh "$INSTALL_DIR/bin/" || error_exit "Falha ao copiar scripts"
+    # Definir permissões
     chmod +x "$INSTALL_DIR/bin/"*.sh
+    chmod +x "$INSTALL_DIR/tools/"*.sh
     
-    # Verifica versão atualizada
+    # Verificar versão
     if [ -f "$CONFIG_FILE" ]; then
         version=$(grep "export VERSION=" "$CONFIG_FILE" | cut -d'=' -f2)
         log "Atualização concluída! Versão: $version"
     fi
     
+    # Limpeza
+    rm -rf "$TEMP_DIR"
+    
     log "=== Atualização finalizada com sucesso ==="
     echo "SUCCESS"
 }
 
-# Executa
 main "$@" 2>&1
